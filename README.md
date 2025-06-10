@@ -65,7 +65,7 @@ python main.py
 
 ## Acknowledgments
 
-This work is part of the [REPERTOIRUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
+This work is part of the [REPERTORIUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
 
 ## License
 This work is under a [MIT](LICENSE) license.
