@@ -53,11 +53,21 @@ class CTCDataset(Dataset):
         return len(self.X)
 
     def __getitem__(self, idx):
+        if self.model_name == "trocr":
+            # TrOCR expects PIL image resized to 224x224 and tokenized label
+            image = Image.open(self.X[idx]).convert("RGB").resize((224, 224))
+            label = open(self.Y[idx], "r", encoding="utf-8").read().strip()
+
+            pixel_values = self.processor(images=image, return_tensors="pt").pixel_values.squeeze()
+            label_ids = self.processor.tokenizer(label, return_tensors="pt").input_ids.squeeze()
+            return {"pixel_values": pixel_values, "labels": label_ids}
+
+        
         unfolding = False
-        if self.model_name == "fcn" or self.model_name == "crnnunfolding" or self.model_name == "cnnt2d":
+        if self.model_name == "fcn" or self.model_name == "crnnunfolding" or self.model_name == "cnnt2d" or self.model_name == "van":
             unfolding = True
             
-        if "gregoeli" in self.name and self.model_name in ["fcn", "crnnunfolding", "cnnt2d"]:
+        if "gregoeli" in self.name and self.model_name in ["fcn", "crnnunfolding", "cnnt2d", "van"]:
             reduce = True
         else:
             reduce = False
@@ -70,10 +80,12 @@ class CTCDataset(Dataset):
         
         if self.train:
             # x.shape = [channels, height, width]
-            if self.model_name == "fcn" or self.model_name == "crnnunfolding" or self.model_name == "cnnt2d":
+            if self.model_name == "fcn" or self.model_name == "crnnunfolding" or self.model_name == "cnnt2d" or self.model_name == "van":
                 return x, (x.shape[2] // 8) * (x.shape[1] // 32), y, len(y), img_path
             elif self.model_name == "crnn":
                 return x, x.shape[2] // self.width_reduction, y, len(y), img_path
+            elif self.model_name == "ctc_van":
+                return x, x.shape[2] // 8, y, len(y), img_path
             
         if self.printbatch:
             try:
@@ -169,16 +181,15 @@ class CTCDataset(Dataset):
                     content = file.read().strip()
                     i = 0
                     while i < len(content):
-                        #print(content[i:i+3])
-                        if content[i:i+3] == "<m>":  # Comprueba si el caracter actual tiene etiqueta musical
-                            # Si es así, extrae el caracter musical con la etiqueta
-                            if i + 3 < len(content):  # Asegura que no se sale del rango
+                        if content[i:i+3] == "<m>":  # Check if the token starts with the musical tag
+                            # If so, extract the musical character with the tag
+                            if i + 3 < len(content):  # Ensure it doesn't go out of range
                                 vocab.add("<m>" + content[i+3])
-                                i += 3  # Salta al siguiente caracter después de <m>
+                                i += 3  # Skip to the next character after <m>
                             else:
                                 break
                         else:
-                            # Añade el caracter normal al vocabulario
+                            # Add the normal character to the vocabulary
                             vocab.add(content[i])
                         i += 1
         elif self.encoding_type == "new_gabc" and self.name in ["einsiedeln", "salzinnes"]:
@@ -237,8 +248,5 @@ class CTCDataset(Dataset):
             i2w[i + 1] = w
         w2i["<PAD>"] = 0
         i2w[0] = "<PAD>"
-        
-        #print(w2i)
-        #sys.exit()
 
         return w2i, i2w

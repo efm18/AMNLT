@@ -3,7 +3,6 @@ import torch.nn as nn
 import random
 import torch
 import torch.nn.functional as F
-import sys
 
 from my_utils.data_preprocessing import NUM_CHANNELS, IMG_HEIGHT
 
@@ -249,14 +248,45 @@ class Encoder(nn.Module):
             x = x + xt if x.size() == xt.size() else xt
 
         return x
+    
+class VAN_Encoder(nn.Module):
+    
+    def __init__(self, in_channels, dropout=0.5):
+        super(VAN_Encoder, self).__init__()
+
+        self.dropout = dropout
+
+        self.conv_blocks = nn.ModuleList([
+            ConvBlock(in_channels, 16, stride=(1, 1), dropout=self.dropout),
+            ConvBlock(16, 32, stride=(2, 2), dropout=self.dropout),
+            ConvBlock(32, 64, stride=(2, 2), dropout=self.dropout),
+            ConvBlock(64, 128, stride=(2, 2), dropout=self.dropout),
+            ConvBlock(128, 128, stride=(2, 1), dropout=self.dropout),
+            ConvBlock(128, 128, stride=(2, 1), dropout=self.dropout),
+        ])
+        self.dsc_blocks = nn.ModuleList([
+            DSCBlock(128, 128, stride=(1, 1), dropout=self.dropout),
+            DSCBlock(128, 128, stride=(1, 1), dropout=self.dropout),
+            DSCBlock(128, 128, stride=(1, 1), dropout=self.dropout),
+            DSCBlock(128, 256, stride=(1, 1), dropout=self.dropout),
+        ])
+
+    def forward(self, x):
+        for layer in self.conv_blocks:
+            x = layer(x)
+            
+        for layer in self.dsc_blocks:
+            xt = layer(x)
+            x = x + xt if x.size() == xt.size() else xt
+        return x
 
 ############## Decoders ##############
 
 class PageDecoder(nn.Module):
 
-    def __init__(self, out_cats):
+    def __init__(self, out_cats, in_channels=512):
         super(PageDecoder, self).__init__()
-        self.dec_conv = nn.Conv2d(in_channels= 512, out_channels= out_cats, kernel_size=(5,5), padding=(2,2))
+        self.dec_conv = nn.Conv2d(in_channels= in_channels, out_channels= out_cats, kernel_size=(5,5), padding=(2,2))
         self.lsoftmax = nn.LogSoftmax(dim=1)
     
     def forward(self, inputs):
@@ -305,6 +335,19 @@ class TransformerDecoder2D(nn.Module):
         x = x.permute(1,0,2).contiguous()
         return F.log_softmax(x, dim=2)
     
+class LineDecoder(nn.Module):
+    def __init__(self, out_cats):
+        super(LineDecoder, self).__init__()
+
+        self.vocab_size = out_cats
+
+        self.ada_pool = nn.AdaptiveMaxPool2d((1, None))
+        self.end_conv = nn.Conv2d(in_channels=256, out_channels=self.vocab_size, kernel_size=(1, 1))
+
+    def forward(self, x):
+        x = self.ada_pool(x)
+        x = self.end_conv(x)
+        return torch.squeeze(x, dim=2)
 
 ############## Models ##############
 
@@ -358,6 +401,29 @@ class E2EScore_CNNT2D(nn.Module):
         self.encoder = Encoder(in_channels=in_channels)
         self.decoder = TransformerDecoder2D(out_cats=out_cats, max_w=mw, max_h=mh)
     
+    def forward(self, inputs):
+        x = self.encoder(inputs)
+        x = self.decoder(x)
+        return x
+
+### COQUENET ###
+   
+class E2EScore_VAN(nn.Module):
+    def __init__(self, in_channels, out_cats):
+        super(E2EScore_VAN, self).__init__()
+        self.encoder = VAN_Encoder(in_channels=in_channels)
+        self.decoder = PageDecoder(out_cats=out_cats, in_channels=256)
+        
+    def forward(self, inputs):
+        x = self.encoder(inputs)
+        x = self.decoder(x)
+        return x
+    
+class VANCTCModel(nn.Module):
+    def __init__(self, in_channels, out_cats):
+        super(VANCTCModel, self).__init__()
+        self.encoder = VAN_Encoder(in_channels=in_channels)
+        self.decoder = LineDecoder(out_cats=out_cats)
     def forward(self, inputs):
         x = self.encoder(inputs)
         x = self.decoder(x)

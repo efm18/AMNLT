@@ -1,0 +1,11 @@
+{
+    "data":{
+      "data_path": "Data/Solesmes/folds/",
+      "batch_size": 1,
+      "vocab_name": "Solesmes",
+      "img_format": ".png",
+      "transcript_format": "char",
+      "num_workers": 20,
+      "reduce_ratio": 1.0
+    }
+}

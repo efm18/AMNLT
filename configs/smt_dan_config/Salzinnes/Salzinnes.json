@@ -1,0 +1,11 @@
+{
+    "data":{
+      "data_path": "Data/Salzinnes/folds/",
+      "batch_size": 1,
+      "vocab_name": "Salzinnes",
+      "img_format": ".jpg",
+      "transcript_format": "new_gabc",
+      "num_workers": 20,
+      "reduce_ratio": 1.0
+    }
+}

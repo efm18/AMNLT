@@ -1,0 +1,79 @@
+port = 12347
+manualSeed = 1111
+dist = 'None'
+
+n_channels = 3
+o_classes = 187
+
+GradCheck = 0
+
+# Parameters for get_images (ds_load.py):
+# ==============================================================================
+get_images.max_w = 3081
+get_images.max_h = 398
+get_images.nch = %n_channels
+
+# Parameters for SameTrCollate (ds_load.py):
+# ==============================================================================
+SameTrCollate.prjAug = True
+SameTrCollate.prjVal = 125
+
+# Parameters for train (train.py):
+# ==============================================================================
+train.experiment_name = 'salzinnes_baseline'
+
+train.AMP = False
+train.WdB = True
+train.wdbprj = 'Salzinnes_project'
+train.train_data_list = 'data/Salzinnes/folds/train_gt_fold.dat'
+train.train_data_path = 'data/Salzinnes/Images'
+train.test_data_list  = 'data/Salzinnes/folds/val_gt_fold.dat'
+train.test_data_path  = 'data/Salzinnes/Images'
+train.train_batch_size = 1
+train.val_batch_size   = 1
+train.workers = 4
+train.lr = 0.01
+train.continue_model = ''
+train.valInterval = 500
+train.num_iter = 0
+
+# Parameters for OrigamiNet (cnv_model.py):
+# ==============================================================================
+OrigamiNet.n_channels = %n_channels
+OrigamiNet.o_classes  = %o_classes
+OrigamiNet.fup = 33
+OrigamiNet.GradCheck = %GradCheck
+
+OrigamiNet.nlyrs = 12
+OrigamiNet.wmul = 1.0
+
+OrigamiNet.lszs = {
+  0: 128,
+  2: 256,
+  4: 512,
+  11: 256
+}
+
+MaxPool2d.kernel_size = (2,2)
+Upsample.mode = 'bilinear'
+Upsample.align_corners = True
+s1/Upsample.size = (600, 30)
+s2/Upsample.size = (1200, 16)
+
+OrigamiNet.lreszs = {
+  0: @MaxPool2d(),
+  2: @MaxPool2d(),
+  4: @MaxPool2d(),
+  6: @PadPool(),
+  8: @PadPool(),
+  10: @s1/Upsample(),
+  11: @s2/Upsample()
+}
+
+# Parameters for InitBlock (cnv_model.py):
+# ==============================================================================
+InitBlock.n_channels = %n_channels
+
+# Parameters for GateBlock (cnv_model.py):
+# ==============================================================================
+GateBlock.GradCheck = %GradCheck

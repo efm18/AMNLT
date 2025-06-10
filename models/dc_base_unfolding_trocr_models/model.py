@@ -14,9 +14,11 @@ from torchvision.utils import save_image
 
 from my_utils.augmentations import AugmentStage
 from my_utils.data_preprocessing import IMG_HEIGHT, NUM_CHANNELS
-from my_utils.metrics import compute_metrics, ctc_greedy_decoder#, ctc_grammar_driven_decoder
+from my_utils.metrics import compute_metrics, ctc_greedy_decoder
 from models.modules import CRNN
-from models.modules import E2EScore_FCN, E2EScore_CRNN, E2EScore_CNNT2D
+from models.modules import E2EScore_FCN, E2EScore_CRNN, E2EScore_CNNT2D, E2EScore_VAN, VANCTCModel
+
+from transformers import VisionEncoderDecoderModel, TrOCRProcessor, PreTrainedTokenizerFast
 
 class CTCTrainedCRNN(LightningModule):
     def __init__(self, w2i, i2w, ctc, use_augmentations=True, ytest_i2w=None, check_train=False, ds_name=None):
@@ -29,13 +31,13 @@ class CTCTrainedCRNN(LightningModule):
         self.ytest_i2w = ytest_i2w if ytest_i2w is not None else i2w
         # Model
         self.model = CRNN(output_size=len(self.w2i) + 1)
-        self.summary()
+        self.summary = summary(self.model, input_size=(1, NUM_CHANNELS, IMG_HEIGHT, 256))
         # Augmentations
         self.augment = AugmentStage() if use_augmentations else lambda x: x
         # Loss
         self.ctc = ctc
         self.compute_ctc_loss = CTCLoss(
-            blank=len(self.w2i), zero_infinity=True
+            blank=len(self.w2i), zero_infinity=False
         )  # The target index cannot be blank!
         # Predictions
         self.Y = []
@@ -79,9 +81,10 @@ class CTCTrainedCRNN(LightningModule):
         yhat = self.model(x)
         # ------ CTC Requirements ------
         # yhat: [batch, frames, vocab_size]
-        yhat = yhat.log_softmax(dim=2)
+        yhat = yhat.log_softmax(dim=2)        
         yhat = yhat.permute(1, 0, 2).contiguous()
         # ------------------------------
+        
         loss = self.compute_ctc_loss(yhat, y, xl, yl)
         self.log("train_loss", loss, prog_bar=True, logger=True, on_epoch=True)
         
@@ -125,8 +128,7 @@ class CTCTrainedCRNN(LightningModule):
             yhat = yhat.log_softmax(dim=-1).detach().cpu()
             self.raw_ctcs.append(yhat)
             yhat = ctc_greedy_decoder(yhat, self.i2w)
-        #elif self.ctc == "grammar":
-        #    yhat = ctc_grammar_driven_decoder(yhat, self.i2w)
+
         # Decoded ground truth
         y = [self.ytest_i2w[i.item()] for i in y[0]]
         # Append to later compute metrics
@@ -151,8 +153,6 @@ class CTCTrainedCRNN(LightningModule):
         with open(f"predictions_{self.ds_name}.txt", 'w') as f:
             for pred, gt in zip(self.YHat, self.Y):
                 pred_str = ''.join(pred)
-                #gt_str = ''.join(gt)
-                #f.write(f"{pred_str}\t{gt_str}\n")
                 f.write(f"{pred_str}\n")
                 
         # Clear predictions
@@ -179,6 +179,8 @@ class LightningE2EModelUnfolding(LightningModule):
             self.model = E2EScore_CRNN(1, len(self.w2i) + 1)
         elif model == "cnnt2d":
             self.model = E2EScore_CNNT2D(1, len(self.w2i) + 1, mh, mw)
+        elif model == "van":
+            self.model = E2EScore_VAN(1, len(self.w2i) + 1)
         self.summary()
         # Augmentations
         self.augment = AugmentStage() if use_augmentations else lambda x: x
@@ -225,23 +227,6 @@ class LightningE2EModelUnfolding(LightningModule):
         if abs(loss - avg_loss) > self.threshold:
             loss_path = os.path.join(loss_dir, os.path.basename(img_path))
             x.save(loss_path)
-    
-    #def on_train_epoch_end(self):
-    #    avg_loss = 0.0
-    #    
-    #    for loss in self.losses:
-    #        avg_loss += loss
-    #        
-    #    avg_loss /= len(self.losses)
-    #    
-    #    loss_dir = "large_losses"
-    #    if os.path.exists(loss_dir):
-    #        shutil.rmtree(loss_dir)
-    #    os.makedirs(loss_dir, exist_ok=True)
-    #    
-    #    for loss, img_path in zip(self.losses, self.img_paths):
-    #        x = Image.open(img_path)
-    #        self.check_image(x, loss, img_path, avg_loss, loss_dir)
 
     def validation_step(self, batch, batch_idx):
         x, y, img_path = batch  # batch_size = 1
@@ -310,3 +295,78 @@ class LightningE2EModelUnfolding(LightningModule):
 
     def on_test_epoch_end(self):
         return self.on_validation_epoch_end(name="test", print_random_samples=True)
+
+######### PR REVIEW ##########
+
+class CTCTrainedTrOCR(LightningModule):
+    def __init__(self, ds_name, tokenizer_path, processor_name="microsoft/trocr-base-handwritten", lr=5e-5):
+        super().__init__()
+        self.save_hyperparameters()
+
+        # Load base processor (for vision feature extractor)
+        base_processor = TrOCRProcessor.from_pretrained(processor_name)
+
+        # Load your custom tokenizer from saved path
+        tokenizer = PreTrainedTokenizerFast.from_pretrained(tokenizer_path)
+
+        # Reconstruct processor with custom tokenizer
+        self.processor = TrOCRProcessor(
+            feature_extractor=base_processor.feature_extractor,
+            tokenizer=tokenizer,
+        )
+
+        # Load pre-trained TrOCR model
+        self.model = VisionEncoderDecoderModel.from_pretrained(processor_name)
+
+        # Set tokenizer and decoding config
+        self.model.config.vocab_size = tokenizer.vocab_size
+        self.model.config.pad_token_id = tokenizer.pad_token_id
+        self.model.config.decoder_start_token_id = tokenizer.pad_token_id
+
+        self.lr = lr
+        self.ds_name = ds_name
+        self.music = "music" in ds_name
+
+        self.Y = []
+        self.YHat = []
+
+    def configure_optimizers(self):
+        return torch.optim.AdamW(self.parameters(), lr=self.lr)
+
+    def training_step(self, batch, batch_idx):
+        outputs = self.model(
+            pixel_values=batch["pixel_values"],
+            labels=batch["labels"]
+        )
+        self.log("train_loss", outputs.loss, prog_bar=True)
+        return outputs.loss
+
+    def validation_step(self, batch, batch_idx):
+        outputs = self.model(
+            pixel_values=batch["pixel_values"],
+            labels=batch["labels"]
+        )
+        pred_ids = self.model.generate(batch["pixel_values"])
+        preds = self.processor.batch_decode(pred_ids, skip_special_tokens=True)
+        targets = self.processor.batch_decode(batch["labels"], skip_special_tokens=True)
+
+        self.YHat.extend([list(p) for p in preds])
+        self.Y.extend([list(t) for t in targets])
+
+    def test_step(self, batch, batch_idx):
+        return self.validation_step(batch, batch_idx)
+
+    def on_validation_epoch_end(self, name="val"):
+        metrics = compute_metrics(self.Y, self.YHat, music=self.music)
+        for k, v in metrics.items():
+            self.log(f"val_{k}", v, prog_bar=True)
+
+        with open(f"predictions_{self.ds_name}.txt", 'w') as f:
+            for pred in self.YHat:
+                f.write("".join(pred) + "\n")
+
+        self.Y.clear()
+        self.YHat.clear()
+
+    def on_test_epoch_end(self):
+        self.on_validation_epoch_end(name="test")

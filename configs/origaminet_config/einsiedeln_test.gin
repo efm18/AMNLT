@@ -1,0 +1,70 @@
+# Basic setup
+manualSeed = 1111
+dist = 'None'
+
+n_channels = 3
+o_classes = 181
+
+GradCheck = 0
+
+# Data parameters (same as training)
+test_data_list = 'data/Einsiedeln/folds/test_gt_fold.dat'
+test_data_path = 'data/Einsiedeln/Images'
+test_batch_size = 1
+workers = 4
+
+# Model parameters
+n_channels = 3
+o_classes = 181
+GradCheck = 0
+
+# For model definition (OrigamiNet)
+OrigamiNet.n_channels = %n_channels
+OrigamiNet.o_classes  = %o_classes
+OrigamiNet.fup = 33
+OrigamiNet.GradCheck = %GradCheck
+
+OrigamiNet.nlyrs = 12
+OrigamiNet.wmul = 1.0
+
+OrigamiNet.lszs = {
+  0: 128,
+  2: 256,
+  4: 512,
+  11: 256
+}
+
+MaxPool2d.kernel_size = (2,2)
+Upsample.mode = 'bilinear'
+Upsample.align_corners = True
+s1/Upsample.size = (600, 30)
+s2/Upsample.size = (1200, 16)
+
+OrigamiNet.lreszs = {
+  0: @MaxPool2d(),
+  2: @MaxPool2d(),
+  4: @MaxPool2d(),
+  6: @PadPool(),
+  8: @PadPool(),
+  10: @s1/Upsample(),
+  11: @s2/Upsample()
+}
+
+# Optional shared settings (used in utils or dataloaders)
+get_images.max_w = 3852
+get_images.max_h = 498
+get_images.nch = %n_channels
+
+SameTrCollate.prjAug = False  # usually no augmentation at test time
+SameTrCollate.prjVal = 125
+
+# AMP not used for test
+AMP = False
+
+# Parameters for InitBlock (cnv_model.py):
+# ==============================================================================
+InitBlock.n_channels = %n_channels
+
+# Parameters for GateBlock (cnv_model.py):
+# ==============================================================================
+GateBlock.GradCheck = %GradCheck

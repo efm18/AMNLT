@@ -9,7 +9,7 @@ class AugmentStage(nn.Module):
         self.transforms = v2.Compose(
             [
                 v2.RandomApply([v2.ElasticTransform(alpha=25.0)], p=0.2),
-                v2.RandomRotation(degrees=3), # TODO: apply probability
+                v2.RandomRotation(degrees=3, p=0.2),
                 v2.RandomApply(
                     [
                         v2.ColorJitter(
