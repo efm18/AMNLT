@@ -2,9 +2,9 @@
   <a href=""><img src="https://i.imgur.com/Iu7CvC1.png" alt="PRAIG-logo" width="100"></a>
 </p>
 
-<h1 align="center">Title</h1>
+<h1 align="center">Aligned Music Notation and Lyrics Transcription</h1>
 
-<h4 align="center">Full text available <a href="" target="_blank">here</a>.</h4>
+<h4 align="center">Full paper available <a href="" target="_blank">here</a>.</h4>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.9.0-orange" alt="Gitter">
