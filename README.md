@@ -69,3 +69,7 @@ This work is part of the [REPERTOIRUM](https://repertorium.eu/) project, funded 
 
 ## License
 This work is under a [MIT](LICENSE) license.
+
+> ⚠️ **Disclaimer**  
+> This project is currently undergoing a major refactoring. Some parts of the codebase may not work as expected or could change without notice.  
+> Please proceed with caution and check back for updates.
