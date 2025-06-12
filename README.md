@@ -65,7 +65,7 @@ python main.py [arguments]
 }
 ```
 
-<a name=acknowledgements></a>
+<a name=acknowledgments></a>
 ## 🙏 Acknowledgments
 
 This work is part of the [REPERTORIUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
