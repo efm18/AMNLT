@@ -22,8 +22,10 @@
   <a href="#license">License</a>
 </p>
 
+---
 
-## About
+<a name=about></a>
+## 📚 About
 
 This repository contains the official code for Aligned Music Notation and Lyrics Transcription (AMNLT), a framework designed to jointly transcribe and align music notation and lyrics from vocal score images—especially historical notations such as Gregorian chant.
 
@@ -36,18 +38,25 @@ This project includes:
 - Benchmark datasets (GregoSynth, Solesmes, Einsiedeln, Salzinnes) uploaded to [Huggin Face](https://huggingface.co/datasets/PRAIG/AMNLT).
 - Metrics for transcription accuracy and alignment precision (MER, CER, SylER, AMLER, AlER).
 
+---
 
-## How To Use
+<a name=how-to-use></a>
+## ⚙️ How to Use
 
 To run the code, you'll need to meet certain requirements which are specified in the [`Dockerfile`](Dockerfile). Alternatively, you can set up a virtual environment if preferred.
 
 Once you have prepared your environment (either a Docker container or a virtual environment), you are ready to begin. Execute the [`main.py`](main.py) script to replicate the experiments from our work:
 
 ```python
-python main.py
+python main.py [arguments]
 ```
+> ⚠️ **Note**  
+> This script requires one or more arguments. Run python `main.py --help` to see the full list of options and usage instructions.
 
-## Citations
+---
+
+<a name=citations></a>
+## 📖 Citations
 
 ```bibtex
 @article{john2025doe,
@@ -62,12 +71,21 @@ python main.py
 }
 ```
 
-## Acknowledgments
+---
+
+<a name=acknowledgements></a>
+## 🙏 Acknowledgments
 
 This work is part of the [REPERTORIUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
 
-## License
+---
+
+<a name=license></a>
+## 📝 License
+
 This work is under a [MIT](https://opensource.org/licenses/MIT) license.
+
+---
 
 > ⚠️ **Disclaimer**  
 > This project is currently undergoing a major refactoring. Some parts of the codebase may not work as expected or could change without notice.  
