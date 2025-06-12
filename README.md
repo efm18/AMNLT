@@ -67,7 +67,8 @@ python main.py
 This work is part of the [REPERTORIUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
 
 ## License
-This work is under a [MIT](LICENSE) license.
+This work is under a [MIT](https://opensource.org/licenses/MIT)
+) license.
 
 > ⚠️ **Disclaimer**  
 > This project is currently undergoing a major refactoring. Some parts of the codebase may not work as expected or could change without notice.  
