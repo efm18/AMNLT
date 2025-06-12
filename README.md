@@ -33,7 +33,7 @@ This project includes:
 - Divide-and-conquer and end-to-end models for AMNLT.
 - Post-processing alignment strategies (syllable-level, frame-level).
 - Holistic transcription pipelines (CTC, unfolding, and language modeling).
-- Benchmark datasets (GregoSynth, Solesmes, Einsiedeln, Salzinnes) uploaded to [Huggin Face](https://huggingface.co/datasets/PRAIG/AMNLT).
+- Benchmark datasets (GregoSynth, Solesmes, Einsiedeln, Salzinnes) uploaded to [Hugging Face](https://huggingface.co/datasets/PRAIG/AMNLT).
 - Metrics for transcription accuracy and alignment precision (MER, CER, SylER, AMLER, AlER).
 
 <a name=how-to-use></a>
