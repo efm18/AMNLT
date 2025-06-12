@@ -22,8 +22,6 @@
   <a href="#license">License</a>
 </p>
 
----
-
 <a name=about></a>
 ## 📚 About
 
@@ -38,8 +36,6 @@ This project includes:
 - Benchmark datasets (GregoSynth, Solesmes, Einsiedeln, Salzinnes) uploaded to [Huggin Face](https://huggingface.co/datasets/PRAIG/AMNLT).
 - Metrics for transcription accuracy and alignment precision (MER, CER, SylER, AMLER, AlER).
 
----
-
 <a name=how-to-use></a>
 ## ⚙️ How to Use
 
@@ -52,8 +48,6 @@ python main.py [arguments]
 ```
 > ⚠️ **Note**  
 > This script requires one or more arguments. Run python `main.py --help` to see the full list of options and usage instructions.
-
----
 
 <a name=citations></a>
 ## 📖 Citations
@@ -71,21 +65,15 @@ python main.py [arguments]
 }
 ```
 
----
-
 <a name=acknowledgements></a>
 ## 🙏 Acknowledgments
 
 This work is part of the [REPERTORIUM](https://repertorium.eu/) project, funded by EU Horizon Europe program (Grant No. 101095065).
 
----
-
 <a name=license></a>
 ## 📝 License
 
 This work is under a [MIT](https://opensource.org/licenses/MIT) license.
-
----
 
 > ⚠️ **Disclaimer**  
 > This project is currently undergoing a major refactoring. Some parts of the codebase may not work as expected or could change without notice.  
